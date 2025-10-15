@@ -1,0 +1,12 @@
+# poetry venv
+.venv/
+# python
+__pycache__/
+*.pyc
+# env
+.env
+# streamlit
+.streamlit/
+# coverage
+htmlcov/
+.coverage

@@ -1,0 +1,47 @@
+[project]
+name = "ai-knowledge-assistant-agent"
+version = "0.1.0"
+description = "AI Knowledge Assistant Agent"
+authors = [
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit (>=1.50.0,<2.0.0)",
+    "duckduckgo-search (>=8.1.1,<9.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "pydantic (>=2.12.2,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[too.ruff]
+line-length = 100
+target-version = "py311"
+lint.select = ["E","F","I","UP","B","C4","SIM"]
+lint.ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_redundant_casts = true
+strict_optional = true
+
+[tool.pytest.ini_options]
+addopts = "-q --maxfail=1 --disable-warnings"
+pythonpath = ["."]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.0"
+mypy = "^1.18.2"
+pre-commit = "^4.3.0"
+pytest = "^8.4.2"
+pytest-cov = "^7.0.0"
+types-requests = "^2.32.4.20250913"
+
