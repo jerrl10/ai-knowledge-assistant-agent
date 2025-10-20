@@ -11,35 +11,30 @@ MODEL = "tinyllama-1.1b-chat-v1.0"
 
 
 def call_llm(prompt: str, history: List[Dict[str, str]] | None = None) -> str:
-    """
-    Sends a chat-completion request directly to an LM Studio local server.
+    """Call LM Studio or other local OpenAI-compatible endpoint."""
 
-    Args:
-        prompt: user query
-        history: optional list of {"user": str, "agent": str} pairs
+    LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
+    LMSTUDIO_API_KEY = "lmstudio"
+    MODEL = "tinyllama-1.1b-chat-v1.0"
 
-    Returns:
-        model reply text
-    """
-    messages: List[Dict[str, str]] = [
-        {"role": "system", "content": "You are a concise, helpful AI agent."}
-    ]
-
-    # if history:
-    #     for turn in history:
-    #         messages.append({"role": "user", "content": turn["user"]})
-    #         messages.append({"role": "assistant", "content": turn["agent"]})
-
-    messages.append({"role": "user", "content": prompt})
-
-    url = LMSTUDIO_BASE_URL.rstrip("/") + "/chat/completions"
+    url = LMSTUDIO_BASE_URL.rstrip("/") + "/completions"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {LMSTUDIO_API_KEY}",
     }
+
+    messages = [{"role": "system", "content": "You are a concise helpful AI."}]
+    if history:
+        for h in history:
+            messages.append({"role": "user", "content": h["user"]})
+            messages.append({"role": "assistant", "content": h["agent"]})
+    messages.append({"role": "user", "content": prompt})
+
+    prompt_text = flatten_messages(messages)
+
     payload = {
         "model": MODEL,
-        "messages": messages,
+        "prompt": prompt_text,
         "temperature": 0.6,
         "max_tokens": 800,
     }
@@ -48,8 +43,23 @@ def call_llm(prompt: str, history: List[Dict[str, str]] | None = None) -> str:
         resp = requests.post(url, headers=headers, json=payload, timeout=120)
         resp.raise_for_status()
         data = resp.json()
-        return data["choices"][0]["message"]["content"].strip()  # type: ignore[no-any-return]
-    except requests.exceptions.ConnectionError:
-        return "[LLM error] Cannot reach LM Studio — is the local server running at 127.0.0.1:1234?"
+        text: str = str(data["choices"][0].get("text", "")).strip()
+        return text
     except Exception as e:
         return f"[LLM error] {type(e).__name__}: {e}"
+
+
+def flatten_messages(messages: list[dict[str, str]]) -> str:
+    """Convert chat-style messages into a single text prompt string."""
+    lines = []
+    for m in messages:
+        role = m.get("role", "").capitalize()
+        content = m.get("content", "")
+        if role and content:
+            lines.append(f"{role}: {content}")
+    # Encourage the model to output valid JSON
+    lines.append(
+        "\nAssistant: Please respond with ONLY a valid JSON object. "
+        'Example: {"thought": "<reasoning>", "final_answer": "<answer>"}'
+    )
+    return "\n".join(lines)

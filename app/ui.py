@@ -25,18 +25,30 @@ st.title("🧠 AI Knowledge Assistant (ReAct Reasoning Agent)")
 if "agent" not in st.session_state:
     st.session_state.agent = Agent()
 
-query = st.text_area("💬 Ask me anything:", height=120)
-if st.button("Run"):
-    with st.spinner("Thinking..."):
-        result = st.session_state.agent.run(query)
+question = st.text_area("Ask me anything:", height=120)
+go = st.button("Run")
 
-    # Split reasoning steps visually
-    for line in result.split("\n"):
-        if line.startswith("🧠"):
-            st.markdown(f"### {line}")
-        elif line.startswith("🔍"):
-            st.info(line)
-        elif "✅ Final Answer" in line:
-            st.success(line)
-        else:
-            st.write(line)
+if go and question.strip():
+    area = st.container()
+    with st.spinner("Thinking..."):
+
+        def draw(step):
+            with area:
+                st.markdown(f"### Step {step.idx}")
+                st.write(f"**Thought:** {step.thought}")
+                if step.tool:
+                    st.code(
+                        f"Action: {step.tool}('{step.tool_input}')", language="text"
+                    )
+                if step.observation:
+                    st.info(step.observation[:1200])
+                if step.confidence is not None:
+                    st.caption(
+                        f"Relevance: {step.confidence:.2f} — {step.confidence_reason or ''}"
+                    )
+                if step.final_answer:
+                    st.success(step.final_answer)
+
+        # stream steps
+        for _ in st.session_state.agent.run_stream(question, on_step=draw):
+            pass

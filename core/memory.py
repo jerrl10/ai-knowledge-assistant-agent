@@ -19,3 +19,16 @@ class Memory:
         data = self.load()
         data.append({"user": user, "agent": agent})
         self.path.write_text(json.dumps(data[-self.keep :], indent=2), encoding="utf-8")
+
+    def append_trace(
+        self, user: str, steps: List[Dict[str, Any]], final_answer: str
+    ) -> None:
+        tp = self.path.with_suffix(".traces.json")
+        if not tp.exists():
+            tp.write_text("[]", encoding="utf-8")
+        traces: Any = json.loads(tp.read_text(encoding="utf-8"))
+        traces = cast(List[Dict[str, Any]], traces)
+        traces.append({"user": user, "steps": steps, "final": final_answer})
+        tp.write_text(
+            json.dumps(traces, ensure_ascii=False, indent=2), encoding="utf-8"
+        )

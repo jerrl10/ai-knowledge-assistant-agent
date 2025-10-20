@@ -4,6 +4,8 @@ from typing import Callable, List
 from duckduckgo_search import DDGS
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from core.llm import call_llm
+
 
 @dataclass(frozen=True)
 class Tool:
@@ -47,9 +49,24 @@ def echo(text: str) -> str:
     return f"Echo: {text}"
 
 
+@dataclass
+class SummarizeTool:
+    name: str = "summarize"
+    description: str = "Summarize a given text into 3-5 bullet points."
+
+    def call(self, text: str) -> str:
+        prompt = (
+            "Summarize the following text in 3-5 concise bullet points.\n\n"
+            f"TEXT:\n{text}\n\n"
+            "Return plain text bullets, no JSON."
+        )
+        return call_llm(prompt, history=None)
+
+
 TOOL_REGISTRY = {
     "search": Tool(
         name="search", description="Search the web for information", call=search
     ),
     "echo": Tool(name="echo", description="Echo back the input text", call=echo),
+    "summarize": SummarizeTool(),
 }
